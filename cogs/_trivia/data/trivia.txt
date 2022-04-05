@@ -1,0 +1,15 @@
+**HOW IT WORKS**
+Using `/trivia question`, you'll be asked a trivia question based on a randomly selected category and difficulty (unless specified otherwise).
+Once the the question is generated and displayed, you will have 20 seconds to answer it.  If you get it right, great! Points will be awarded accordingly.
+But if you get it wrong, don't worry. You get to try again as often as you'd like.
+
+**POINTS**
+- Easy questions - 10 points
+- Medium questions - 20 points
+- Hard questions - 30 points
+
+**BONUS**
++10 bonus points, no category or difficulty specified
++5 bonus points, only category or difficulty specified
++0 bonus points, both category and difficulty specified
+
