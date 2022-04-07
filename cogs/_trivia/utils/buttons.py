@@ -6,22 +6,20 @@ from cogs._trivia.utils import db
 
 class AnswerButtons(View):
     '''
-    View class that containes trivia answer buttons
+    View class that contains trivia answer buttons
 
     Parameters
     ----------
-    member: (obj) The discord member object
     answers: (list) the list of answers provided from trivia api (correct + wrong - shuffled)
     correct: (str) the correct answer provided by trivia API to compare interaction
-    inter: (obj) The discord interaction object (from original slash command rsponse that invokes this view)
+    inter: (obj) The discord interaction object (from original slash command response that invokes this view)
     points: (int) The calculated points
     quest: (str) The trivia question
     '''
 
-    def __init__(self, member, answers, correct, inter, points, quest):
+    def __init__(self, answers, correct, inter, points, quest):
         super().__init__(timeout=20)
         [self.add_item(Button(label=a, style=ButtonStyle.primary)) for a in answers]
-        self.member = member
         self.correct = correct
         self.inter = inter
         self.points = points
@@ -50,15 +48,14 @@ class AnswerButtons(View):
         self.stop()
 
         # update the member in db
-        db.update_member(member=self.member, wrong=1)
+        db.update_member(member=inter.author, wrong=1)
 
     async def interaction_check(self, interaction):
         '''invoked when any interaction takes place on the invoked View'''
         author = interaction.author
 
         # If button interaction user == original slash command user
-        if author == self.member:
-
+        if author == self.inter.author:
             # assign default values
             points = 0
             correct = 0
@@ -113,7 +110,7 @@ class AnswerButtons(View):
                 self.stop()
 
             # update the member in the db
-            db.update_member(member=author, points=points, correct=correct, wrong=wrong)
+            db.update_member(member=self.inter.author, points=points, correct=correct, wrong=wrong)
 
         # If button interaction user != original slash command user
         else:
@@ -123,10 +120,21 @@ class AnswerButtons(View):
 
 
 class LeaderView(View):
-    def __init__(self, points_em, correct_em):
-        super().__init__(timeout=600)
+    def __init__(self, points_em, correct_em, inter):
+        super().__init__(timeout=300)
         self.points_em = points_em
         self.correct_em = correct_em
+        self.inter = inter
+
+
+    async def on_timeout(self):
+        ''''buttons timeout after 300s (5m), disable buttons'''
+        for button in self.children:
+            button.disabled = True
+
+        # Respond to the interaction and upate the view, stop View listener
+        await self.inter.edit_original_message(view=self)
+        self.stop()
 
     @button(label="Sort: Points", style=ButtonStyle.primary)
     async def points_view(self, button: Button, interaction: Interaction):

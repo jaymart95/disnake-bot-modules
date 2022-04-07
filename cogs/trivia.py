@@ -140,6 +140,8 @@ class Trivia(commands.Cog):
         target: (Optional) The target guild member
         '''
 
+        view = LeaderView(points_em, correct_em)
+
         # if no target passed
         if not target:
             guild = inter.guild
@@ -216,9 +218,14 @@ class Trivia(commands.Cog):
             )
 
             # send the embed and generate the views
-            await inter.response.send_message(
-                embed=points_em, view=LeaderView(points_em, correct_em)
+            msg = await inter.response.send_message(
+                embed=points_em, view=view)
             )
+            await sleep(600)
+
+            for button in view.children:
+                button.disabled = True
+            await msg.edit()
 
         # if target
         else:
@@ -250,6 +257,8 @@ class Trivia(commands.Cog):
                     embed.set_thumbnail(url=target.display_avatar.url)
 
                 await inter.response.send_message(embed=embed)
+
+
 
             # if target, and not in db
             else:

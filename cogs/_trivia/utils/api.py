@@ -52,20 +52,24 @@ async def get_category_id(category):
 async def trivia_question(category=None, difficulty=None):
     '''
     Fetch the trivia question from the API based on if a category and/or difficulty is present
-    Also assigns values to points and bonus depending on difficulty of the question and whether
-    or not difficulty or category was specified in the command
+    Assign bonus points based on which arguments are passed.
 
-    Paramters
+    Parameters
     ---------
     category: (str) The category passed from the /trivia question command (Defaults None)
     difficulty: (str) The difficulty passed from the /trivia question command (Defaults None)
 
     Returns
     -------
-    Fetched Trivia question and info: category, difficulty, correct answer, wrong answers
+    Trivia question and info: category, difficulty, correct answer, wrong answers
     Calculated points (includes bonus)
     '''
-    if category is None and difficulty:
+    if category and difficulty:
+        cat_id = await get_category_id(category)
+        url = f"https://opentdb.com/api.php?amount=1&category={cat_id}&difficulty={difficulty}"
+        print(url)
+        bonus = 0
+    elif category is None and difficulty:
         url = f"https://opentdb.com/api.php?amount=1&difficulty={difficulty}"
         bonus = 5
 
@@ -79,24 +83,27 @@ async def trivia_question(category=None, difficulty=None):
 
     async with ClientSession() as session:
         async with session.get(url) as r:
-            q = await r.json()
+            response = await r.json()
 
-    print(q)
-
-    results = q["results"][0]
-
-    if results["difficulty"] == "hard":
-        points = 30 + bonus
-    elif results["difficulty"] == "medium":
-        points = 20 + bonus
-    else:
-        points = 10 + bonus
+    print(response)
+    results = response["results"][0]
+    points = get_points(results['difficulty'])
+    points += bonus
 
     return (
         results["category"].title(),
         results["difficulty"].title(),
         unescape(results["question"]),
         unescape(results["correct_answer"]),
-        unescape(results["incorrect_answers"]),
-        points,
-    )
+        results["incorrect_answers"],
+        points
+        )
+
+
+def get_points(difficulty):
+    if difficulty == 'hard':
+        return 30
+    elif difficulty == 'medium':
+        return 20
+    else:
+        return 10
