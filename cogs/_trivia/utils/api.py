@@ -67,7 +67,6 @@ async def trivia_question(category=None, difficulty=None):
     if category and difficulty:
         cat_id = await get_category_id(category)
         url = f"https://opentdb.com/api.php?amount=1&category={cat_id}&difficulty={difficulty}"
-        print(url)
         bonus = 0
     elif category is None and difficulty:
         url = f"https://opentdb.com/api.php?amount=1&difficulty={difficulty}"
@@ -85,7 +84,6 @@ async def trivia_question(category=None, difficulty=None):
         async with session.get(url) as r:
             response = await r.json()
 
-    print(response)
     results = response["results"][0]
     points = get_points(results['difficulty'])
     points += bonus
