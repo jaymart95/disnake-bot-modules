@@ -8,6 +8,7 @@ from cogs._trivia.utils.buttons import AnswerButtons, LeaderView
 
 from json import load
 from random import shuffle
+from html import unescape
 
 
 def load_cat_list():
@@ -59,18 +60,22 @@ class Trivia(commands.Cog):
         difficulty: (Optional) Specify question difficulty
         """
         # fetch the trivia question and shuffle the incorrect and correct answers into answers variable
-        cat, diff, quest, correct, incorrect, points = await api.trivia_question(
-            category, difficulty
+        if difficulty:
+            difficulty = difficulty.lower()
+
+        cat, diff, quest, correct, incorrect, points, bonus = await api.trivia_question(
+            category=category, difficulty=difficulty
         )
 
-        # combine correct and incorrect answers, then shuffle
+
+        # combine correct and wrong answers, unescape HTML, and shuffle
         answers = incorrect
         answers.append(correct)
+        answers = [unescape(a) for a in answers]
         shuffle(answers)
-        member = inter.author
 
         # Discord button view
-        view = AnswerButtons(member, answers, correct, inter, points, quest)
+        view = AnswerButtons(answers, correct, inter, points, bonus, quest)
 
         # build the initial embed
         embed = Embed(
@@ -78,11 +83,11 @@ class Trivia(commands.Cog):
             description=":stopwatch: **20s** remaining",
         )
         embed.add_field(
-            name="Info", value=f"Category: {cat}\nDifficulty: {diff}", inline=False
+            name="Info", value=f"Category: {cat}\nDifficulty: {diff}\nValue: {points} points. (+ {bonus} bonus)", inline=False
         )
         embed.add_field(name="Question:", value=quest)
 
-        await inter.response.send_message(embed=embed, view=view)
+        await inter.response.send_message(embed=embed, view=view, ephemeral=True)
 
         # start countdown and edit embed each second until time runs out or interaction
         t = 20
@@ -97,12 +102,10 @@ class Trivia(commands.Cog):
 
             embed = Embed(
                 title="Hurry! Your time is limited!",
-                description=f":stopwatch: **{t}s** remaining",
+                description=f":stopwatch: **{t}s** remaining"
             )
             embed.add_field(
-                name="Info",
-                value=f"Category: {cat}\nDifficulty: {diff}\u200b",
-                inline=False,
+                name="Info", value=f"Category: {cat}\nDifficulty: {diff}\nValue: {points} points. (+ {bonus} bonus)", inline=False
             )
             embed.add_field(name="Question:", value=quest)
 
@@ -111,6 +114,11 @@ class Trivia(commands.Cog):
                 break
 
             await inter.edit_original_message(embed=embed)
+
+
+        await inter.edit_original_message(content='Trivia has completed, please clear this messsage',
+            embed=None, view=view.clear_items())
+
 
     @trivia_command.sub_command(name="help")
     async def trivia_categories(self, inter):
@@ -123,7 +131,7 @@ class Trivia(commands.Cog):
         body = load_trivia_help_body()
 
         embed = Embed(
-            title="Trivia Help")
+            title="Trivia Help", description=body)
         embed.add_field(name="Categories", value=categories, inline=True)
         embed.add_field(name="Difficulties", value=difficulties, inline=True)
         embed.set_footer(text="All data provided by OpenTDB.com")
@@ -139,8 +147,6 @@ class Trivia(commands.Cog):
         ---------
         target: (Optional) The target guild member
         '''
-
-        view = LeaderView(points_em, correct_em)
 
         # if no target passed
         if not target:
@@ -218,14 +224,9 @@ class Trivia(commands.Cog):
             )
 
             # send the embed and generate the views
-            msg = await inter.response.send_message(
-                embed=points_em, view=view)
+            await inter.response.send_message(
+                embed=points_em, view=LeaderView(points_em, correct_em, inter)
             )
-            await sleep(600)
-
-            for button in view.children:
-                button.disabled = True
-            await msg.edit()
 
         # if target
         else:
@@ -257,8 +258,6 @@ class Trivia(commands.Cog):
                     embed.set_thumbnail(url=target.display_avatar.url)
 
                 await inter.response.send_message(embed=embed)
-
-
 
             # if target, and not in db
             else:

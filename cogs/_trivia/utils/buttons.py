@@ -17,12 +17,13 @@ class AnswerButtons(View):
     quest: (str) The trivia question
     '''
 
-    def __init__(self, answers, correct, inter, points, quest):
+    def __init__(self, answers, correct, inter, points, bonus, quest):
         super().__init__(timeout=20)
         [self.add_item(Button(label=a, style=ButtonStyle.primary)) for a in answers]
         self.correct = correct
         self.inter = inter
         self.points = points
+        self.bonus = bonus
         self.quest = quest
 
     async def on_timeout(self):
@@ -30,12 +31,14 @@ class AnswerButtons(View):
 
         embed = Embed(
             title=":yellow_circle: Sorry! You ran out of time",
-            description="No points earned this time.",
+            description=f'{str(self.inter.author.mention)} earned no points this time.',
         )
         embed.add_field(
             name="Question",
             value=f"{self.quest}\n\nThe correct answer is: **{self.correct}**.",
         )
+        if self.inter.author.avatar:
+            embed.set_thumbnail(url=self.inter.author.avatar.url)
 
         # iterate view buttons and assign colors and disable
         for button in self.children:
@@ -44,11 +47,11 @@ class AnswerButtons(View):
             button.disabled = True
 
         # Respond to the interaction and upate the view, stop View listener
-        await self.inter.edit_original_message(embed=embed, view=self)
+        await self.inter.channel.send(embed=embed, view=self)
         self.stop()
 
         # update the member in db
-        db.update_member(member=inter.author, wrong=1)
+        db.update_member(member=self.inter.author, wrong=1)
 
     async def interaction_check(self, interaction):
         '''invoked when any interaction takes place on the invoked View'''
@@ -60,20 +63,25 @@ class AnswerButtons(View):
             points = 0
             correct = 0
             wrong = 0
+            bonus = 0
 
             # check if the interacted button is the correct answer button
             if interaction.component.label == self.correct:
                 correct = 1
                 points = self.points
+                bonus = self.bonus
 
                 embed = Embed(
                     title=":green_circle: Hey! You did it!",
-                    description=f"You earned {self.points} points!",
+                    description=f"{str(self.inter.author.mention)} earned **{self.points} points (+ {bonus} bonus)**!",
                 )
                 embed.add_field(
                     name="Question",
                     value=f"{self.quest}\n\n**{self.correct}** is correct!.",
                 )
+
+                if self.inter.author.avatar:
+                    embed.set_thumbnail(url=self.inter.author.avatar.url)
 
                 # iterate view buttons and assign colors and disable
                 for button in self.children:
@@ -82,7 +90,8 @@ class AnswerButtons(View):
                     button.disabled = True
 
                 # Respond to the interaction and upate the view, stop View listener
-                await interaction.response.edit_message(embed=embed, view=self)
+                await interaction.response.defer()
+                await interaction.channel.send(embed=embed, view=self)
                 self.stop()
 
             # If the answer selected is not correct
@@ -90,12 +99,14 @@ class AnswerButtons(View):
                 wrong = 1
                 embed = Embed(
                     title=":red_circle: Sorry! That wasn't correct",
-                    description="No points earned this time.",
+                    description=f'{str(self.inter.author.mention)} earned no points this time.',
                 )
                 embed.add_field(
                     name="Question",
                     value=f"{self.quest}\n\n**The correct answer is: {self.correct}**.",
                 )
+                if self.inter.author.avatar:
+                    embed.set_thumbnail(url=self.inter.author.avatar.url)
 
                 # iterate view buttons and assign colors and disable
                 for button in self.children:
@@ -106,11 +117,12 @@ class AnswerButtons(View):
                     button.disabled = True
 
                 # Respond to the interaction and upate the view, stop View listener
-                await interaction.response.edit_message(embed=embed, view=self)
+                await interaction.response.defer()
+                await interaction.channel.send(embed=embed, view=self)
                 self.stop()
 
             # update the member in the db
-            db.update_member(member=self.inter.author, points=points, correct=correct, wrong=wrong)
+            db.update_member(member=self.inter.author, points=points+bonus, correct=correct, wrong=wrong)
 
         # If button interaction user != original slash command user
         else:

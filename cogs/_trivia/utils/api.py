@@ -86,7 +86,6 @@ async def trivia_question(category=None, difficulty=None):
 
     results = response["results"][0]
     points = get_points(results['difficulty'])
-    points += bonus
 
     return (
         results["category"].title(),
@@ -94,7 +93,7 @@ async def trivia_question(category=None, difficulty=None):
         unescape(results["question"]),
         unescape(results["correct_answer"]),
         results["incorrect_answers"],
-        points
+        points, bonus
         )
 
 
