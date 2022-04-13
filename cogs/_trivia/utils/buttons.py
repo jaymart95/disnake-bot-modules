@@ -1,5 +1,6 @@
 from disnake import Embed, ButtonStyle, Interaction
 from disnake.ui import View, Button, button
+from datetime import datetime
 
 from cogs._trivia.utils import db
 
@@ -18,7 +19,7 @@ class AnswerButtons(View):
     '''
 
     def __init__(self, answers, correct, inter, points, bonus, quest):
-        super().__init__(timeout=20)
+        super().__init__(timeout=23)
         [self.add_item(Button(label=a, style=ButtonStyle.primary)) for a in answers]
         self.correct = correct
         self.inter = inter
@@ -32,6 +33,7 @@ class AnswerButtons(View):
         embed = Embed(
             title=":yellow_circle: Sorry! You ran out of time",
             description=f'{str(self.inter.author.mention)} earned no points this time.',
+            timestamp = datetime.now()
         )
         embed.add_field(
             name="Question",
@@ -42,8 +44,10 @@ class AnswerButtons(View):
 
         # iterate view buttons and assign colors and disable
         for button in self.children:
+            button.style = ButtonStyle.secondary
             if button.label == self.correct:
-                button.style = ButtonStyle.success
+                button.style = ButtonStyle.primary
+
             button.disabled = True
 
         # Respond to the interaction and upate the view, stop View listener
@@ -74,6 +78,7 @@ class AnswerButtons(View):
                 embed = Embed(
                     title=":green_circle: Hey! You did it!",
                     description=f"{str(self.inter.author.mention)} earned **{self.points} points (+ {bonus} bonus)**!",
+                    timestamp = datetime.now()
                 )
                 embed.add_field(
                     name="Question",
@@ -85,6 +90,7 @@ class AnswerButtons(View):
 
                 # iterate view buttons and assign colors and disable
                 for button in self.children:
+                    button.style = ButtonStyle.secondary
                     if button.label == interaction.component.label:
                         button.style = ButtonStyle.success
                     button.disabled = True
@@ -100,6 +106,7 @@ class AnswerButtons(View):
                 embed = Embed(
                     title=":red_circle: Sorry! That wasn't correct",
                     description=f'{str(self.inter.author.mention)} earned no points this time.',
+                    timestamp = datetime.now()
                 )
                 embed.add_field(
                     name="Question",
@@ -110,6 +117,7 @@ class AnswerButtons(View):
 
                 # iterate view buttons and assign colors and disable
                 for button in self.children:
+                    button.style = ButtonStyle.secondary
                     if button.label == interaction.component.label:
                         button.style = ButtonStyle.danger
                     elif button.label == self.correct:

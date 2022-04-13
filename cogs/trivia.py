@@ -9,6 +9,7 @@ from cogs._trivia.utils.buttons import AnswerButtons, LeaderView
 from json import load
 from random import shuffle
 from html import unescape
+from datetime import datetime
 
 
 def load_cat_list():
@@ -67,6 +68,7 @@ class Trivia(commands.Cog):
             category=category, difficulty=difficulty
         )
 
+        timestamp = datetime.now()
 
         # combine correct and wrong answers, unescape HTML, and shuffle
         answers = incorrect
@@ -81,13 +83,16 @@ class Trivia(commands.Cog):
         embed = Embed(
             title="Hurry! Your time is limited!",
             description=":stopwatch: **20s** remaining",
+            timestamp = timestamp
         )
         embed.add_field(
             name="Info", value=f"Category: {cat}\nDifficulty: {diff}\nValue: {points} points. (+ {bonus} bonus)", inline=False
         )
         embed.add_field(name="Question:", value=quest)
+        if inter.author.avatar:
+            embed.set_thumbnail(url=inter.author.avatar.url)
 
-        await inter.response.send_message(embed=embed, view=view, ephemeral=True)
+        await inter.response.send_message(embed=embed, view=view, ephemeral=False)
 
         # start countdown and edit embed each second until time runs out or interaction
         t = 20
@@ -102,12 +107,15 @@ class Trivia(commands.Cog):
 
             embed = Embed(
                 title="Hurry! Your time is limited!",
-                description=f":stopwatch: **{t}s** remaining"
+                description=f":stopwatch: **{t}s** remaining",
+                timestamp = timestamp
             )
             embed.add_field(
                 name="Info", value=f"Category: {cat}\nDifficulty: {diff}\nValue: {points} points. (+ {bonus} bonus)", inline=False
             )
             embed.add_field(name="Question:", value=quest)
+            if inter.author.avatar:
+                embed.set_thumbnail(url=inter.author.avatar.url)
 
             # if the interaction view is completed, break this loop
             if view.is_finished():
@@ -116,8 +124,7 @@ class Trivia(commands.Cog):
             await inter.edit_original_message(embed=embed)
 
 
-        await inter.edit_original_message(content='Trivia has completed, please clear this messsage',
-            embed=None, view=view.clear_items())
+        await inter.delete_original_message()
 
 
     @trivia_command.sub_command(name="help")
