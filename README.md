@@ -5,9 +5,7 @@
 
 
 
- ## Modules in Collection
-
- ### Trivia
+ ## Trivia
  Using the free Open Trivia Database, this bot module is designed to ask your members trivia questions from a wide range of topics and varying difficulties.
 
  To setup this module, you'll need the following packages:
@@ -25,7 +23,7 @@ A sqlite database will also be generated and tables built within modules/trivia/
 
 
 
-### Teams
+## Teams
 Create custom team v team matches for your server with ease using just a `/play` command.  An embed is displayed that allows players to join/leave the queue. Embed is updated in real-time.  When ready use the [Play] button when you're ready.  The following events take place:
 1. A category with a name of "Match {number}" is created with two voice channels, "Red Team" and "Blue Team"
 2. A counter is added to the matches.json to keep up with how many active matches are happening in the server, only used for category names
