@@ -19,7 +19,7 @@ Tabulate v0.8.10 | `pip install tabulate==0.8.10`
 
 
 One first run, when the cog is loaded it wil scrape the OpenTDB categories and load them into /data/categories.json. This will happen each time the bot is restarted, though the category list should rarely change, if ever.
-A sqlite database will also be generated and tables built within modules/trivia/data/.  SQLite is fine for a single server bot, but if you wish to integrate your own database, it is up to you to make the code adjustments.
+A sqlite database will also be generated and tables built within modules/trivia/data/.  It is not designed to support multiple servers as I didn't need it to, but simple adjustments could be made to make it work.
 
 
 
