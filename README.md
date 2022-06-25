@@ -52,7 +52,6 @@ applications.commands | To create slash commands in your server
 Manage Channels | To create/delete categories and voice channels
 Read Messages/View Channels | To see channels for accessing it's own messages
 Send Messages | To send it's messages
-Manage Messages | To delete it's own messages
 Move Members | To be able to move members to team voice channels
 
 #### Notes: Players MUST be in a voice channel when queueing up, this is because they will be moved when everyone is ready to play
