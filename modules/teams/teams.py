@@ -302,7 +302,7 @@ class Teams(commands.Cog):
         Parameters
         ----------
         interaction: disnake.ApplicationCommandInteraction - Represents the interaction instance
-        maps: (Optional) List of maps to be randomly selected from during matchmaking
+        maps: (Optional) Comma separated list of maps to include for random selection
         """
 
         # split maps into list if passed
