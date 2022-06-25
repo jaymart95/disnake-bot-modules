@@ -17,6 +17,14 @@ python-dotenv v0.20 | `pip install python-dotenv==0.20.0`
 SQLAlchemy v1.4.39 | `pip install sqlalchemy==1.4.39`
 Tabulate v0.8.10 | `pip install tabulate==0.8.10`
 
+**Scopes and required permissions**
+Scope/Permission | Reason
+--- | ---
+bot | It's a bot
+applications.commands | To create slash commands in your server
+Read Messages/View Channels | To see channels for accessing it's own messages
+Send Messages | To send it's messages
+
 
 One first run, when the cog is loaded it wil scrape the OpenTDB categories and load them into /data/categories.json. This will happen each time the bot is restarted, though the category list should rarely change, if ever.
 A sqlite database will also be generated and tables built within modules/trivia/data/.  It is not designed to support multiple servers as I didn't need it to, but simple adjustments could be made to make it work.
@@ -35,6 +43,17 @@ Once finished with a match, the command user can click on the [Finished] button 
 Supports up to 10v10 matches.
 
 *No extra dependencies are required.*
+
+**Scopes and required permissions**
+Scope/Permission | Reason
+--- | ---
+bot | It's a bot
+applications.commands | To create slash commands in your server
+Manage Channels | To create/delete categories and voice channels
+Read Messages/View Channels | To see channels for accessing it's own messages
+Send Messages | To send it's messages
+Manage Messages | To delete it's own messages
+Move Members | To be able to move members to team voice channels
 
 #### Notes: Players MUST be in a voice channel when queueing up, this is because they will be moved when everyone is ready to play
 
