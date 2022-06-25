@@ -22,9 +22,7 @@ bot = commands.Bot(intents=intents, test_guilds=[1234567890])
 
 # Intialize bot and declare intents
 intents = Intents.all()
-bot = commands.Bot(
-    intents=intents, test_guilds=[878687437965099018, 947543739671412878]
-)
+bot = commands.Bot(intents=intents)
 
 
 @bot.listen()
