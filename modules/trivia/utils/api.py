@@ -4,7 +4,7 @@ from html import unescape
 
 
 async def fetch_categories():
-    '''Scrape the categories API and return the ID: Category list items'''
+    """Scrape the categories API and return the ID: Category list items"""
     url = "https://opentdb.com/api_category.php"
     async with ClientSession() as session:
         async with session.get(url) as r:
@@ -13,10 +13,10 @@ async def fetch_categories():
 
 
 async def update_categories():
-    '''
+    """
     Reformat the ID: Category name to Category Name: ID and store in JSON
     Only runs once when the bot is first started to ensure most up to date categories
-    '''
+    """
     categories = await fetch_categories()
     new_data = {}
     new_data["categories"] = []
@@ -24,12 +24,12 @@ async def update_categories():
     for row in categories:
         new_data["categories"].append({row["name"]: row["id"]})
 
-        with open("./cogs/_trivia/data/categories.json", "w") as x:
+        with open("./modules/trivia/data/categories.json", "w") as x:
             dump(new_data, x, indent=4)
 
 
 async def get_category_id(category):
-    '''
+    """
     Returns the category ID for the api url where category has been specified
 
     Parameters
@@ -39,7 +39,7 @@ async def get_category_id(category):
     Returns
     -------
     The category ID
-    '''
+    """
     with open("./cogs/_trivia/data/categories.json") as f:
         data = load(f)["categories"]
 
@@ -50,7 +50,7 @@ async def get_category_id(category):
 
 
 async def trivia_question(category=None, difficulty=None):
-    '''
+    """
     Fetch the trivia question from the API based on if a category and/or difficulty is present
     Assign bonus points based on which arguments are passed.
 
@@ -63,7 +63,7 @@ async def trivia_question(category=None, difficulty=None):
     -------
     Trivia question and info: category, difficulty, correct answer, wrong answers
     Calculated points (includes bonus)
-    '''
+    """
     if category and difficulty:
         cat_id = await get_category_id(category)
         url = f"https://opentdb.com/api.php?amount=1&category={cat_id}&difficulty={difficulty}"
@@ -85,7 +85,7 @@ async def trivia_question(category=None, difficulty=None):
             response = await r.json()
 
     results = response["results"][0]
-    points = get_points(results['difficulty'])
+    points = get_points(results["difficulty"])
 
     return (
         results["category"].title(),
@@ -93,14 +93,15 @@ async def trivia_question(category=None, difficulty=None):
         unescape(results["question"]),
         unescape(results["correct_answer"]),
         results["incorrect_answers"],
-        points, bonus
-        )
+        points,
+        bonus,
+    )
 
 
 def get_points(difficulty):
-    if difficulty == 'hard':
+    if difficulty == "hard":
         return 30
-    elif difficulty == 'medium':
+    elif difficulty == "medium":
         return 20
     else:
         return 10

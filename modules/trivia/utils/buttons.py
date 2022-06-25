@@ -2,11 +2,11 @@ from disnake import Embed, ButtonStyle, Interaction
 from disnake.ui import View, Button, button
 from datetime import datetime
 
-from cogs._trivia.utils import db
+from modules.trivia.utils import db
 
 
 class AnswerButtons(View):
-    '''
+    """
     View class that contains trivia answer buttons
 
     Parameters
@@ -16,7 +16,7 @@ class AnswerButtons(View):
     inter: (obj) The discord interaction object (from original slash command response that invokes this view)
     points: (int) The calculated points
     quest: (str) The trivia question
-    '''
+    """
 
     def __init__(self, answers, correct, inter, points, bonus, quest):
         super().__init__(timeout=23)
@@ -28,12 +28,12 @@ class AnswerButtons(View):
         self.quest = quest
 
     async def on_timeout(self):
-        '''Invoked if the view times out - 20 seconds'''
+        """Invoked if the view times out - 20 seconds"""
 
         embed = Embed(
             title=":yellow_circle: Sorry! You ran out of time",
-            description=f'{str(self.inter.author.mention)} earned no points this time.',
-            timestamp = datetime.now()
+            description=f"{str(self.inter.author.mention)} earned no points this time.",
+            timestamp=datetime.now(),
         )
         embed.add_field(
             name="Question",
@@ -58,7 +58,7 @@ class AnswerButtons(View):
         db.update_member(member=self.inter.author, wrong=1)
 
     async def interaction_check(self, interaction):
-        '''invoked when any interaction takes place on the invoked View'''
+        """invoked when any interaction takes place on the invoked View"""
         author = interaction.author
 
         # If button interaction user == original slash command user
@@ -78,7 +78,7 @@ class AnswerButtons(View):
                 embed = Embed(
                     title=":green_circle: Hey! You did it!",
                     description=f"{str(self.inter.author.mention)} earned **{self.points} points (+ {bonus} bonus)**!",
-                    timestamp = datetime.now()
+                    timestamp=datetime.now(),
                 )
                 embed.add_field(
                     name="Question",
@@ -105,8 +105,8 @@ class AnswerButtons(View):
                 wrong = 1
                 embed = Embed(
                     title=":red_circle: Sorry! That wasn't correct",
-                    description=f'{str(self.inter.author.mention)} earned no points this time.',
-                    timestamp = datetime.now()
+                    description=f"{str(self.inter.author.mention)} earned no points this time.",
+                    timestamp=datetime.now(),
                 )
                 embed.add_field(
                     name="Question",
@@ -130,7 +130,12 @@ class AnswerButtons(View):
                 self.stop()
 
             # update the member in the db
-            db.update_member(member=self.inter.author, points=points+bonus, correct=correct, wrong=wrong)
+            db.update_member(
+                member=self.inter.author,
+                points=points + bonus,
+                correct=correct,
+                wrong=wrong,
+            )
 
         # If button interaction user != original slash command user
         else:
@@ -146,9 +151,8 @@ class LeaderView(View):
         self.correct_em = correct_em
         self.inter = inter
 
-
     async def on_timeout(self):
-        ''''buttons timeout after 300s (5m), disable buttons'''
+        """'buttons timeout after 300s (5m), disable buttons"""
         for button in self.children:
             button.disabled = True
 

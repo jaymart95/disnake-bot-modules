@@ -1,27 +1,28 @@
-from disnake.ext import commands
-from disnake import Embed, CommandInteraction, Member
-from tabulate import tabulate
-from asyncio import sleep
-
-from cogs._trivia.utils import api, db
-from cogs._trivia.utils.buttons import AnswerButtons, LeaderView
-
 from json import load
 from random import shuffle
 from html import unescape
 from datetime import datetime
+from asyncio import sleep
+
+from disnake.ext import commands
+from disnake import Embed, CommandInteraction, Member
+from tabulate import tabulate
+
+
+from modules.trivia.utils import api, db
+from modules.trivia.utils.buttons import AnswerButtons, LeaderView
 
 
 def load_cat_list():
     """load the list of categories from categories.json"""
-    with open("./cogs/_trivia/data/categories.json") as f:
+    with open("./modules/trivia/data/categories.json") as f:
         data = load(f)
     return [k for item in data["categories"] for (k, v) in item.items()]
 
 
 def load_trivia_help_body():
     """load the formatted trivia help body text from trivia.txt"""
-    with open("./cogs/_trivia/data/trivia.txt") as f:
+    with open("./modules/trivia/data/trivia.txt") as f:
         return f.read()
 
 
@@ -35,17 +36,17 @@ class Trivia(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        '''
+        """
         When Cog is ready, ensure bot is ready and update categories
         Print ready message to console
-        '''
+        """
         await self.bot.wait_until_ready()
         await api.update_categories()
         print(f"Cog loaded: {self.qualified_name}")
 
     @commands.slash_command(name="trivia")
     async def trivia_command(self, inter):
-        '''Command is always invoked if child is invoked'''
+        """Command is always invoked if child is invoked"""
         pass
 
     @trivia_command.sub_command(name="question")
@@ -83,10 +84,12 @@ class Trivia(commands.Cog):
         embed = Embed(
             title="Hurry! Your time is limited!",
             description=":stopwatch: **20s** remaining",
-            timestamp = timestamp
+            timestamp=timestamp,
         )
         embed.add_field(
-            name="Info", value=f"Category: {cat}\nDifficulty: {diff}\nValue: {points} points. (+ {bonus} bonus)", inline=False
+            name="Info",
+            value=f"Category: {cat}\nDifficulty: {diff}\nValue: {points} points. (+ {bonus} bonus)",
+            inline=False,
         )
         embed.add_field(name="Question:", value=quest)
         if inter.author.avatar:
@@ -108,10 +111,12 @@ class Trivia(commands.Cog):
             embed = Embed(
                 title="Hurry! Your time is limited!",
                 description=f":stopwatch: **{t}s** remaining",
-                timestamp = timestamp
+                timestamp=timestamp,
             )
             embed.add_field(
-                name="Info", value=f"Category: {cat}\nDifficulty: {diff}\nValue: {points} points. (+ {bonus} bonus)", inline=False
+                name="Info",
+                value=f"Category: {cat}\nDifficulty: {diff}\nValue: {points} points. (+ {bonus} bonus)",
+                inline=False,
             )
             embed.add_field(name="Question:", value=quest)
             if inter.author.avatar:
@@ -123,22 +128,19 @@ class Trivia(commands.Cog):
 
             await inter.edit_original_message(embed=embed)
 
-
         await inter.delete_original_message()
-
 
     @trivia_command.sub_command(name="help")
     async def trivia_categories(self, inter):
-        '''
+        """
         Display Trivia specific help and information
-        '''
+        """
 
         categories = "\n".join(self.categories)
         difficulties = "\n".join(self.difficulties)
         body = load_trivia_help_body()
 
-        embed = Embed(
-            title="Trivia Help", description=body)
+        embed = Embed(title="Trivia Help", description=body)
         embed.add_field(name="Categories", value=categories, inline=True)
         embed.add_field(name="Difficulties", value=difficulties, inline=True)
         embed.set_footer(text="All data provided by OpenTDB.com")
@@ -147,13 +149,13 @@ class Trivia(commands.Cog):
 
     @trivia_command.sub_command(name="leaderboard")
     async def trivia_leaderboard(self, inter, target: Member = None):
-        '''
+        """
         View the Trivia Leaderboard or a target's trivia stats
 
         Parameter
         ---------
         target: (Optional) The target guild member
-        '''
+        """
 
         # if no target passed
         if not target:
@@ -175,7 +177,6 @@ class Trivia(commands.Cog):
                         f"{round(((item.total_corr/(item.total_corr + item.total_wro))*100),2)}%",
                     ]
                 )
-
 
             # fetch all db rows, sorted by total_corr
             db_correct = db.fetch_leaderboard_correct()
@@ -273,13 +274,13 @@ class Trivia(commands.Cog):
                     ephemeral=True,
                 )
 
-
-    '''
+    """
     Auto complete functions
 
     These functions are necessary to allow members to have selectable argument options (difficulty and categories)
     when using the /trivia question slash command
-    '''
+    """
+
     @trivia_question.autocomplete("category")
     async def cat_autocomplete(self, inter: CommandInteraction, string: str):
         string = string.lower()
@@ -289,10 +290,3 @@ class Trivia(commands.Cog):
     async def diff_autocomplete(self, inter: CommandInteraction, string: str):
         string = string.lower()
         return [diff for diff in self.difficulties if string in diff.lower()]
-
-
-
-
-# bot setup function for this cog
-def setup(bot):
-    bot.add_cog(Trivia(bot))
