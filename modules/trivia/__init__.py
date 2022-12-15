@@ -1,1 +1,0 @@
-from .trivia import Trivia
