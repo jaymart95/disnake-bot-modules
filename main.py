@@ -1,41 +1,63 @@
 """
-A simple, boiler plate main.py necessary to only run the bot and load the cogs (modules)
+A simple boilerplate bot main module to create a bot and load
+the available cogs.
+
+More for my testing and not really for your use
 """
 
-from os import getenv, listdir
+import asyncio
+import os
+import sys
 
-from disnake import Intents
+import disnake
 from disnake.ext import commands
 from dotenv import load_dotenv
+from loguru import logger
 
-from modules.teams import Teams
-from modules.trivia import Trivia
-
-"""
-Add test_guilds = [guildID] as a parameter to commands.Bot if you
-with to bypass global slash command registration while testing.
-
-Example
--------
-bot = commands.Bot(intents=intents, test_guilds=[1234567890])
-"""
-
-# Intialize bot and declare intents
-intents = Intents.all()
-bot = commands.Bot(intents=intents)
+load_dotenv(".env", override=True)
 
 
-@bot.listen()
-async def on_ready():
-    print("------------------------------------------------------------------")
-    print(f"{bot.user.name} is connected to Discord and listening for events.")
+INTENTS = disnake.Intents.all()
+TOKEN = os.getenv("TOKEN")
 
 
-# load bot modules
-bot.add_cog(Teams(bot))
-bot.add_cog(Trivia(bot))
+class MyBot(commands.InteractionBot):
+    """base bot instance"""
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+    async def on_ready(self) -> None:
+        print("Ready")
+
+    def load_extensions(self, path: str) -> None:
+
+        for module in os.listdir(path):
+            name, ext = os.path.splitext(module)
+
+            if "__" in name or ext != ".py":
+                continue
+
+            extension = f"cogs.{name}"
+
+            super().load_extension(extension)
+            logger.info(f"Cog loaded: {extension}")
+
+
+async def main() -> None:
+    """Constructs bot, load extensions, and starts bot"""
+
+    bot = MyBot(intents=INTENTS, reload=True)
+
+    try:
+        bot.load_extensions("cogs/")
+    except Exception:
+        await bot.close()
+        raise
+
+    logger.info("Starting bot")
+    await bot.start(TOKEN or "")
 
 
 if __name__ == "__main__":
-    load_dotenv()
-    bot.run(getenv("TOKEN"))
+    sys.exit(asyncio.run(main()))
