@@ -1,19 +1,19 @@
 [tool.poetry]
 name = "disnake-bot-modules"
 version = "0.1.0"
-description = "A collection of various Discord modules that work with Disnake-2.5.1"
+description = "A collection of various discord bot modules that I use designed for Disnake"
 authors = ["DLCHAMP <36091350+dlchamp@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "disnake_bot_modules"}]
 
 [tool.poetry.dependencies]
-python = "^3.9"
-disnake = "^2.5.1"
-black = "^22.3.0"
+python = "^3.10"
+disnake = "^2.7.0"
+loguru = "^0.6.0"
+python-dotenv = "^0.21.0"
 
-[tool.poetry.dev-dependencies]
-python-dotenv = "^0.20.0"
-tabulate = "^0.8.10"
-SQLAlchemy = "^1.4.39"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
