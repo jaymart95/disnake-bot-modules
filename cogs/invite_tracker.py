@@ -1,4 +1,31 @@
 """
+MIT License
+
+Copyright (c) 2022 DLCHAMP
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+---------------------------------------------------
+Disnake Invite Tracker with Welcome Embed - 0.1.0
+---------------------------------------------------
+
 A simple Invite tracker that keeps a cache of all guilds and their invites.
 It will automatically add the invite to the guild's invite when it is created, 
 removed if expires or is deleted, and can get the invite that was used by
@@ -16,6 +43,7 @@ member that has `manage_guild` permissions
 
 import disnake
 from disnake.ext import commands
+from loguru import logger
 
 
 class InviteTracker:
@@ -38,7 +66,10 @@ class InviteTracker:
                 for invite in await guild.invites():
                     self.cache[guild.id][invite.code] = invite
 
-            except disnake.Forbidden:  # don't have permission to view invites
+            except disnake.Forbidden:  # missing permission to manage guild
+                logger.warning(
+                    f"Missing `manage_guild` permissions in {guild.name} ({guild.id}) | Unable to cache invites"
+                )
                 continue
 
     async def add_guild_to_cache(self, guild: disnake.Guild) -> None:
@@ -114,6 +145,7 @@ class Invites(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: disnake.Member) -> None:
+        """Called when a member joins the guild - Update the invite cache and send welcome message"""
 
         bot = self.bot
         guild = member.guild
