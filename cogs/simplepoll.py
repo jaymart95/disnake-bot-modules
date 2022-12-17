@@ -29,7 +29,8 @@ A Simple poll module that allows users to create polls with up to 25 options
 Keeps track of poll time remaining and announces the winning option when the time expires
 
 Commands:
-`/poll` [expires_in] [options]
+`/poll` [description] [expires_in] [options]
+- description should be a short description on what is being voted on
 - expires_in should be a number followed by s, m, or h (seconds, minutes, hours)
 - options should be a comma separated list of options (min=2, max=25) example: red, green, blue
 """
@@ -118,12 +119,19 @@ class SimplePoll(commands.Cog):
 
     @commands.slash_command(name="poll")
     async def create_poll(
-        self, inter: disnake.GuildCommandInteraction, *, expires_in: str, options: str
+        self,
+        inter: disnake.GuildCommandInteraction,
+        *,
+        options: str,
+        expires_in: str,
+        description: str | None = None,
     ) -> None:
         """Create a new poll
 
         Parameters
         ----------
+        description: :type:`str`
+            Provide some information about this poll
         expires_in: :type:`str`
             Amount of time this poll is active (s= seconds, m = minutes, h= hours, example: 1h)
         options: :type:`str`
@@ -147,17 +155,21 @@ class SimplePoll(commands.Cog):
 
         expires_at = self.calculate_expired_datetime(expires_in)
         view = PollView(expires_at, options)
-        embed = self.build_poll_embed(inter.author, expires_at)
+        embed = self.build_poll_embed(inter.author, expires_at, description)
 
         await inter.response.send_message(embed=embed, view=view)
         view.message = await inter.original_message()
         # await inter.response.send_message(str(expires_at), ephemeral=True)
 
     def build_poll_embed(
-        self, author: disnake.Member, expires_at: datetime.datetime
+        self, author: disnake.Member, expires_at: datetime.datetime, description: str | None
     ) -> disnake.Embed:
         embed = disnake.Embed(title="Vote Now!")
-        embed.description = f"{author.mention} created a poll and is looking for votes!.  Select an option below to secure your vote now!"
+        embed.description = (
+            f"{author.mention} created a poll and is looking for votes!.  Select an option below to secure your vote now!"
+            if description is None
+            else description
+        )
         embed.add_field(
             name="\u200b", value=f'This poll expires {disnake.utils.format_dt(expires_at, "R")}'
         )
