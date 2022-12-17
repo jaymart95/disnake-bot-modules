@@ -56,7 +56,7 @@ def build_plot(data: dict[str, int]) -> None:
             sizes.append(round((v / max) * 100, 2))
 
     _, ax = plt.subplots()
-    ax.pie(sizes, labels=labels, startangle=90)
+    ax.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90)
     ax.axis("equal")
 
     buffer = io.BytesIO()
