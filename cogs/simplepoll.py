@@ -22,17 +22,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ------------------------------
-Disnake Simple Poll - 0.1.0
+Disnake Simple Poll - 0.3.0
 ------------------------------
 A Simple poll module that allows users to create polls with up to 25 options
-
 Keeps track of poll time remaining and announces the winning option when the time expires
 
+While the poll is active and as votes roll in, the embed will be updated with a pie chart 
+that will update with each vote showing the current poll numbers
+
 Commands:
-`/poll` [description] [expires_in] [options]
-- description should be a short description on what is being voted on
-- expires_in should be a number followed by s, m, or h (seconds, minutes, hours)
-- options should be a comma separated list of options (min=2, max=25) example: red, green, blue
+`/poll` [options] (title) (description) (expires_in)
+- [required] options: Add up to 25 options as a comma separated list (ex: Waffles, Pancakes, Biscuits,...)
+- (optional) title: Provide a title for the poll  
+- (optional) description: Provide a description for the poll
+- (optional) expires_in: Amount of time this poll is active (s/seconds, m/minutes, h/hours) (default: 10m)
 """
 import datetime
 import io
