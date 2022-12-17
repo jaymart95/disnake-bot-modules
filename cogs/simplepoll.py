@@ -36,44 +36,95 @@ Commands:
 """
 import datetime
 import io
+import math
 
 import disnake
 import matplotlib.pyplot as plt
 from disnake.ext import commands
 
 
+def value_format(value: float) -> str:
+    """Custom format for pie chart to display value (percentage)"""
+    return f"{value//100} ({value:.2%})"
+
+
 def build_plot(data: dict[str, int]) -> None:
     """Builds and returns the pie chart as a disnake.File"""
     labels = []
-    sizes = []
-    max = sum(data.values())
+    votes = []
+    vote_sum = sum(data.values())
 
     for k, v in data.items():
-        if v == 0:
-            continue
-        else:
+        if v != 0:
             labels.append(k)
-            sizes.append(round((v / max) * 100, 2))
+            votes.append(v)
 
+    def explode():
+        values = []
+        for i in votes:
+            if i == max(votes):
+                values.append(0.07)
+            else:
+                values.append(0.0)
+        return tuple(values)
+
+    def format_values(x: float) -> str:
+        """Format the values as `value (percentage)`"""
+        return f"{math.floor(x / vote_sum)} ({x/100:.2%})"
+
+    # create the pie chart
     _, ax = plt.subplots()
-    ax.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90)
+    ax.pie(
+        votes, labels=labels, autopct=format_values, startangle=0, explode=explode(), shadow=True
+    )
     ax.axis("equal")
 
+    # stores the pie chart image as bytes and returns as disnake.File
     buffer = io.BytesIO()
     plt.savefig(buffer, format="png")
     buffer.seek(0)
+
     return disnake.File(buffer, filename="poll.png")
+
+
+async def options_to_string(inter: disnake.GuildCommandInteraction, options: str) -> set[str]:
+    """Converts the passed options to a set and returns or raises an error"""
+
+    options: set[str] = set([o.strip() for o in options.split(",")])
+
+    if len(options) < 2:
+        raise Exception(f"⚠️ Please include more than {len(options)} options for the poll.")
+    if len(options) > 25:
+        raise Exception("⚠️ You can only have max 25 options")
+
+    return options
+
+
+async def check_expires_in_format(inter: disnake.GuildCommandInteraction, expires_in: str) -> str:
+    """Verifies the argument value for expires_in is correct and returns it, or raises an error"""
+    time, metric = expires_in[:-1], expires_in[-1].lower()
+    if not time.isdigit() or metric.isdigit():
+        raise Exception(f"⚠️ `expires_in` must much the correct format: `1s`, `1m`, or `1h`")
+
+    if metric not in ("s", "m", "h"):
+        raise Exception(
+            f"⚠️ `expires_in` must include one of `s`, `m`, `h` to represent seconds, minutes, or hours"
+        )
+
+    return int(time), metric
 
 
 class PollOptions(disnake.ui.StringSelect):
     """Select that holds the options"""
 
-    def __init__(self, options: dict[str, int]) -> None:
+    def __init__(self, options: set[str]) -> None:
 
         options: list[disnake.SelectOption] = [
-            disnake.SelectOption(label=o, value=o) for o in options.keys()
+            disnake.SelectOption(label=o, value=o) for o in options
         ]
-        super().__init__(placeholder="Vote Now!", min_values=1, max_values=1, options=options)
+        super().__init__(
+            placeholder="Select an Option!", min_values=1, max_values=1, options=options
+        )
 
     async def callback(self, inter: disnake.MessageInteraction) -> None:
         """Handle the poll option selection"""
@@ -101,10 +152,10 @@ class PollView(disnake.ui.View):
 
     message: disnake.Message
 
-    def __init__(self, timeout: float, embed: disnake.Embed, /, options: dict[str, int]) -> None:
-        print(timeout)
+    def __init__(self, timeout: float, embed: disnake.Embed, /, options: set[str]) -> None:
+
         super().__init__(timeout=timeout - 2)
-        self.counts: dict[str, int] = options
+        self.counts: dict[str, int] = dict.fromkeys(options, 0)
         self.voted: dict[int, str] = {}
         self.embed: disnake.Embed = embed
 
@@ -166,55 +217,64 @@ class SimplePoll(commands.Cog):
     def __init__(self, bot: commands.InteractionBot) -> None:
         self.bot = bot
 
+    async def cog_slash_command_error(
+        self, inter: disnake.GuildCommandInteraction, error: Exception
+    ) -> None:
+        """Catches all options that are raised within this cog"""
+        if isinstance(error, commands.ConversionError):
+            return await inter.response.send_message(str(error.original), ephemeral=True)
+
+        raise
+
     @commands.slash_command(name="poll")
     async def create_poll(
         self,
         inter: disnake.GuildCommandInteraction,
         *,
-        options: str,
-        expires_in: str,
-        description: str | None = None,
+        options: list[str] = commands.Param(converter=options_to_string),
+        expires_in: str = commands.Param(
+            convert_defaults=True, converter=check_expires_in_format, default="10m"
+        ),
+        title: str = commands.Param(default="Poll!"),
+        description: str | None = commands.Param(default=None),
     ) -> None:
         """Create a new poll
 
         Parameters
         ----------
-        description: :type:`str`
-            Provide some information about this poll
-        expires_in: :type:`str`
-            Amount of time this poll is active (s= seconds, m = minutes, h= hours, example: 1h)
         options: :type:`str`
             Add up to 25 options as a comma separated list (ex: Waffles, Pancakes, Biscuits,...)
+        expires_in: :type:`str`
+            Amount of time this poll is active (s/seconds, m/minutes, h/hours) (default: 10m)
+        title: :type:`str`
+            Provide a title for the poll
+        description: :type:`str`
+            Provide a description for the poll
+
         """
-        options: set[str] = set([o.strip() for o in options.split(",")])
 
-        if len(options) < 2:
-            return await inter.response.send_message(
-                f"Please include more than {len(options)} options for the poll.", ephemeral=True
-            )
-        if len(options) > 25:
-            return await inter.response.send_message(
-                "You can only have max 25 options", ephemeral=True
-            )
-
-        if expires_in[-1] not in ["m", "s", "h"]:
-            return await inter.response.send_message(
-                "You must use `m` for minutes, `s` for seconds, or `h` for hours", ephemeral=True
-            )
-
-        expires_at, timeout = self.calculate_expired_datetime(expires_in)
-        options_as_dict = dict.fromkeys(options, 0)
-        embed = self.build_poll_embed(inter.author, expires_at, description)
-        view = PollView(timeout, embed, options=options_as_dict)
+        expires_at, timeout = self.calculate_expiration(expires_in)
+        embed = self.build_poll_embed(inter.author, expires_at, title, description)
+        view = PollView(timeout, embed, options=options)
 
         await inter.response.send_message(embed=embed, view=view)
+
+        # since interaction responses do not normally return a message, we need to fetch it here
+        # to pass to the view for editing later
         view.message = await inter.original_message()
-        # await inter.response.send_message(str(expires_at), ephemeral=True)
 
     def build_poll_embed(
-        self, author: disnake.Member, expires_at: datetime.datetime, description: str | None
+        self,
+        author: disnake.Member,
+        expires_at: datetime.datetime,
+        title: str | None,
+        description: str | None,
     ) -> disnake.Embed:
-        embed = disnake.Embed(title="Vote Now!")
+        embed = disnake.Embed(title=title)
+        embed.set_author(
+            name=author.display_name,
+            icon_url=author.display_avatar.url if author.display_avatar else disnake.utils.MISSING,
+        )
         embed.description = (
             f"{author.mention} created a poll and is looking for votes!.  Select an option below to secure your vote now!"
             if description is None
@@ -226,11 +286,10 @@ class SimplePoll(commands.Cog):
 
         return embed
 
-    def calculate_expired_datetime(self, expires_in: str) -> tuple[datetime.datetime, float]:
+    def calculate_expiration(self, expires_in: tuple[str, str]) -> tuple[datetime.datetime, float]:
         """Calculates the datetime when the poll expires"""
         now = disnake.utils.utcnow()
-        time = int("".join(c for c in expires_in if c.isdigit()))
-        metric = expires_in[-1]
+        time, metric = expires_in
 
         if metric == "s":
             future = now + datetime.timedelta(seconds=time)
