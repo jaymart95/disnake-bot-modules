@@ -182,15 +182,13 @@ class Invites(commands.Cog):
             )
 
         formatted_invites = "\n".join(
-            f"{invite.url} | Created by: {invite.inviter.mention} | Uses: {invite.uses}"
+            f"Invite Code: {invite.code} | Created by: {invite.inviter.mention} | Uses: {invite.uses}"
             for invite in invites
         )
 
         await inter.response.send_message(
             formatted_invites,
-            ephemeral=True,
-            allowed_mentions=disnake.AllowedMentions.none(),
-            suppress_embeds=True,
+            ephemeral=True
         )
 
 
