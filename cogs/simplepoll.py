@@ -35,31 +35,65 @@ Commands:
 - options should be a comma separated list of options (min=2, max=25) example: red, green, blue
 """
 import datetime
+import io
 
 import disnake
+import matplotlib.pyplot as plt
 from disnake.ext import commands
+
+
+def build_plot(data: dict[str, int]) -> None:
+    """Builds and returns the pie chart as a disnake.File"""
+    labels = []
+    sizes = []
+    max = sum(data.values())
+
+    for k, v in data.items():
+        if v == 0:
+            continue
+        else:
+            labels.append(k)
+            sizes.append(round((v / max) * 100, 2))
+
+    _, ax = plt.subplots()
+    ax.pie(sizes, labels=labels, startangle=90)
+    ax.axis("equal")
+
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    return disnake.File(buffer, filename="poll.png")
 
 
 class PollOptions(disnake.ui.StringSelect):
     """Select that holds the options"""
 
-    def __init__(self, options: list[str]) -> None:
+    def __init__(self, options: dict[str, int]) -> None:
 
         options: list[disnake.SelectOption] = [
-            disnake.SelectOption(label=o, value=o) for o in options
+            disnake.SelectOption(label=o, value=o) for o in options.keys()
         ]
         super().__init__(placeholder="Vote Now!", min_values=1, max_values=1, options=options)
 
     async def callback(self, inter: disnake.MessageInteraction) -> None:
         """Handle the poll option selection"""
-        if inter.author.id in self.view.voted:
-            return await inter.response.send_message("Hey! You already voted!", ephemeral=True)
 
         selected_option = self.values[0]
-        self.view.add_vote(inter.author.id, selected_option)
-        await inter.response.send_message(
-            f"Your vote for {selected_option} has been counted!", ephemeral=True
-        )
+
+        if inter.author.id in self.view.voted:
+            previous_option = self.view.voted.get(inter.author.id)
+            self.view.change_vote(inter.author.id, previous_option, selected_option)
+            await inter.response.send_message(
+                f"Your vote has been changed from {previous_option} to {selected_option}",
+                ephemeral=True,
+            )
+        else:
+            self.view.add_vote(inter.author.id, selected_option)
+            await inter.response.send_message(
+                f"Your vote for {selected_option} has been counted!", ephemeral=True
+            )
+
+        await self.view.update_message()
 
 
 class PollView(disnake.ui.View):
@@ -67,18 +101,31 @@ class PollView(disnake.ui.View):
 
     message: disnake.Message
 
-    def __init__(self, expires_at: datetime.datetime, /, options: list[str]) -> None:
-        timeout = (expires_at - disnake.utils.utcnow()).seconds
-        super().__init__(timeout=timeout)
-        self.counts: dict[str, int] = dict.fromkeys(options, 0)
-        self.voted: list[int] = []
+    def __init__(self, timeout: float, embed: disnake.Embed, /, options: dict[str, int]) -> None:
+        print(timeout)
+        super().__init__(timeout=timeout - 2)
+        self.counts: dict[str, int] = options
+        self.voted: dict[int, str] = {}
+        self.embed: disnake.Embed = embed
 
         self.add_item(PollOptions(options))
+
+    async def update_message(self) -> None:
+        """Updates the embed with a new graph image"""
+        self.embed.set_image(file=build_plot(self.counts))
+        await self.message.edit(embed=self.embed, attachments=None)
 
     def add_vote(self, member_id: int, option: str) -> None:
         """Update the count for a vote"""
         self.counts[option] += 1
-        self.voted.append(member_id)
+        self.voted[member_id] = option
+
+    def change_vote(self, member_id: int, previous_option: str, option: str) -> None:
+        """Change the vote if the user tries to vote again"""
+
+        self.counts[previous_option] -= 1
+        self.counts[option] += 1
+        self.voted[member_id] = option
 
     def select_winners(self) -> list[tuple[str, int]]:
         """Return the option with the most votes or return options with highest vote if tie"""
@@ -101,7 +148,7 @@ class PollView(disnake.ui.View):
 
             options = "\n".join([f"**{o[0]}**" for o in winners])
             count = winners[0][1]
-            embed.description = f"It's a {len(winners)} tie with {count} votes each!\n{options}"
+            embed.description = f"It's a {len(winners)} way tie with {count} votes each!\n{options}"
 
         return embed
 
@@ -109,8 +156,10 @@ class PollView(disnake.ui.View):
         """Poll and view have timed out - update the embed with winning option and remove buttons"""
         winners = self.select_winners()
         embed = self.create_announce_embed(winners)
+        if winners:
+            embed.set_image(file=build_plot(self.counts))
 
-        await self.message.edit(embed=embed, view=self.clear_items())
+        await self.message.edit(embed=embed, view=self.clear_items(), attachments=None)
 
 
 class SimplePoll(commands.Cog):
@@ -153,9 +202,10 @@ class SimplePoll(commands.Cog):
                 "You must use `m` for minutes, `s` for seconds, or `h` for hours", ephemeral=True
             )
 
-        expires_at = self.calculate_expired_datetime(expires_in)
-        view = PollView(expires_at, options)
+        expires_at, timeout = self.calculate_expired_datetime(expires_in)
+        options_as_dict = dict.fromkeys(options, 0)
         embed = self.build_poll_embed(inter.author, expires_at, description)
+        view = PollView(timeout, embed, options=options_as_dict)
 
         await inter.response.send_message(embed=embed, view=view)
         view.message = await inter.original_message()
@@ -176,17 +226,23 @@ class SimplePoll(commands.Cog):
 
         return embed
 
-    def calculate_expired_datetime(self, expires_in: str) -> datetime.datetime:
+    def calculate_expired_datetime(self, expires_in: str) -> tuple[datetime.datetime, float]:
         """Calculates the datetime when the poll expires"""
         now = disnake.utils.utcnow()
         time = int("".join(c for c in expires_in if c.isdigit()))
         metric = expires_in[-1]
+
         if metric == "s":
-            return now + datetime.timedelta(seconds=time)
-        if metric == "m":
-            return now + datetime.timedelta(minutes=time)
-        if metric == "h":
-            return now + datetime.timedelta(hours=time)
+            future = now + datetime.timedelta(seconds=time)
+            timeout = datetime.datetime.timestamp(future) - datetime.datetime.timestamp(now)
+        elif metric == "m":
+            future = now + datetime.timedelta(minutes=time)
+            timeout = datetime.datetime.timestamp(future) - datetime.datetime.timestamp(now)
+        elif metric == "h":
+            future = now + datetime.timedelta(hours=time)
+            timeout = datetime.datetime.timestamp(future) - datetime.datetime.timestamp(now)
+
+        return future, timeout
 
 
 def setup(bot: commands.InteractionBot) -> None:
