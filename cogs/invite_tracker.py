@@ -23,7 +23,7 @@ SOFTWARE.
 
 
 ---------------------------------------------------
-Disnake Invite Tracker with Welcome Embed - 0.1.0
+Disnake Invite Tracker with Welcome Embed - 0.1.2
 ---------------------------------------------------
 
 A simple Invite tracker that keeps a cache of all guilds and their invites.
@@ -82,9 +82,10 @@ class InviteTracker:
 
     async def remove_guild_from_cache(self, guild: disnake.Guild) -> None:
         """Remove a guild from the cache"""
+
         try:
             self.cache.pop(guild.id)
-        except:  # likely the guild just doesn't exist, so we can quietly return
+        except KeyError:  # guild wasn't cached
             return
 
     async def add_invite_to_cache(self, invite: disnake.Invite) -> None:
@@ -186,10 +187,7 @@ class Invites(commands.Cog):
             for invite in invites
         )
 
-        await inter.response.send_message(
-            formatted_invites,
-            ephemeral=True
-        )
+        await inter.response.send_message(formatted_invites, ephemeral=True)
 
 
 def setup(bot: commands.InteractionBot) -> None:
