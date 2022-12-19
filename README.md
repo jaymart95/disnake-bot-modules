@@ -9,6 +9,19 @@
 
 
 
+ ### Upcoming Modules
+Module ideas I have noted and will eventually work on adding.  
+
+- [Starting Soon] | Ticket module using new forum threads and simple json file for persistence
+- [Planned] | Ticket module using regular threads
+- [Planned] | Giveaway module with buttons
+- [Planned] | Basic mod module
+
+&nbsp;
+
+
+
+
 ### Modules
 *Be sure to read the module directly as each has more details and config instructions (if applicable) in a docstring at the top*
 
