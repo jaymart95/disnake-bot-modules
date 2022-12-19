@@ -12,7 +12,7 @@
  ### Upcoming Modules
 Module ideas I have noted and will eventually work on adding.  
 
-- Ticket module using new forum threads and simple json file for persistence | [Coming Soon] 
+- Ticket module using new forum threads and simple json file for persistence | [Planned] 
 - Ticket module using regular threads | [Planned]
 - Giveaway module with buttons | [Planned]
 - Basic mod module | [Planned] 
