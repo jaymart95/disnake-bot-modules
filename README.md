@@ -14,7 +14,6 @@ Module ideas I have noted and will eventually work on adding.
 
 - Ticket module using new forum threads and simple json file for persistence | [Planned] 
 - Ticket module using regular threads | [Planned]
-- Giveaway module with buttons | [Planned]
 - Basic mod module | [Planned] 
 
 &nbsp;
@@ -31,3 +30,4 @@ Name<br>(Version) | Description | Requirements
 [matchmaker.py](https://raw.githubusercontent.com/dlchamp/disnake-bot-modules/main/cogs/matchmaker.py)<br>(0.2.0) | A simple team generator module.  Use the `/matchmaker` command to generate an embed where users can join/leave queue. Once the command user is ready, it will automatically split the members up into 2 even teams | No special requirements
 [invite_tracker.py](https://raw.githubusercontent.com/dlchamp/disnake-bot-modules/main/cogs/invite_tracker.py)<br>(0.1.2) | Adds the ability to track who invited who by keeping up with guild's active invites. When a new user joins, a welcome message is sent to the configured channel or system channel, or first text channel the bot has permission to view and send messages in showing who joined, and who's invite was used | No special requirements
 [simplepoll.py](https://raw.githubusercontent.com/dlchamp/disnake-bot-modules/main/cogs/simplepoll.py)<br>(0.3.0) | Adds a `/poll` command that will allow users to create polls with up to 25 options. Give it a title and/or description, and set how long the poll should be active.  Each new vote will update the embed with a pie chart showing the votes, count, and percentage.  At the end it will display which option won and with how many votes.  If a tie, it will display all options that tied and the votes they were tied with | Requires [matplotlib==3.6.2](https://pypi.org/project/matplotlib/)
+[giveaway.py](https://raw.githubusercontent.com/dlchamp/disnake-bot-modules/main/cogs/giveaway.py)<br>(0.1.0) | Adds a `/giveaway` command that will send an embed to the channel with giveaway info.  Users can join with a simple button click.  When the giveaway has ended, users will not be able to join, but the command user will be able to randomly select a winner with the click of a button and the embed will be updated with the member who won | No special requirements
