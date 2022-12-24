@@ -90,7 +90,7 @@ def build_plot(data: dict[str, int]) -> None:
     return disnake.File(buffer, filename="poll.png")
 
 
-async def options_to_string(inter: disnake.GuildCommandInteraction, options: str) -> set[str]:
+async def options_to_set(inter: disnake.GuildCommandInteraction, options: str) -> set[str]:
     """Converts the passed options to a set and returns or raises an error"""
 
     options: set[str] = set([o.strip() for o in options.split(",")])
@@ -151,7 +151,7 @@ class PollOptions(disnake.ui.StringSelect):
 
 
 class PollView(disnake.ui.View):
-    """Poll instance view - stores the poll counts and the options, and the time at which it expires"""
+    """Poll instance view - stores the poll counts and the options"""
 
     message: disnake.Message
 
@@ -234,7 +234,7 @@ class SimplePoll(commands.Cog):
         self,
         inter: disnake.GuildCommandInteraction,
         *,
-        options: list[str] = commands.Param(converter=options_to_string),
+        options: list[str] = commands.Param(converter=options_to_set),
         expires_in: str = commands.Param(
             convert_defaults=True, converter=check_expires_in_format, default="10m"
         ),
