@@ -123,9 +123,9 @@ class InviteTracker:
 class Invites(commands.Cog):
     def __init__(self, bot: commands.InteractionBot):
         self.bot: commands.InteractionBot = bot
-        self.invite_cache: InviteTracker
+        self.invite_cache: InviteTracker = InviteTracker(bot)
 
-    async def get_channel(self, guild: disnake.Guild) -> disnake.TextChannel:
+    def get_channel(self, guild: disnake.Guild) -> disnake.TextChannel:
         """Gets the guild's system channel, if present, or it selects the first `disnake.TextChannel` the bot
         has permission to view and send messages in"""
 
@@ -162,7 +162,10 @@ class Invites(commands.Cog):
             )
             embed.add_field(name="Invited by:", value=invite.inviter.mention)
 
-            await self.get_channel(guild).send(embed=embed)
+            if channel := self.get_channel(guild):
+                await channel.send(embed=embed)
+
+            print(channel)
 
     @commands.slash_command(name="invites")
     @commands.default_member_permissions(manage_guild=True)
