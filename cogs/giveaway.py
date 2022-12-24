@@ -175,7 +175,8 @@ class GiveawayView(disnake.ui.View):
 
 
 async def get_future_time(inter: disnake.GuildCommandInteraction, expires_in: str) -> str:
-    """Verifies the argument value for expires_in is correct and returns it, or raises an error"""
+    """Verifies the argument value for expires_in is correct and returns the converted future datetime object, or
+    raises an error"""
 
     time, metric = expires_in[:-1], expires_in[-1].lower()
 
